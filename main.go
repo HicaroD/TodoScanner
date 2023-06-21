@@ -28,9 +28,7 @@ func (scanner *TodoScanner) scanAllFiles(directoryPath string) error {
 		}
 		scanner.getAllTodosFromFile(archive.Name())
 	}
-
 	// TODO: upload selected TODOs to GitHub
-
 	return nil
 }
 
