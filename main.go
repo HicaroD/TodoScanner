@@ -7,11 +7,13 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strings"
 )
 
-var REGEX_PATTERN_FOR_TODO string = `\/\/\s*TODO:\s*(.*)`
+var REGEX_PATTERN_FOR_TODO string = `TODO:\s*(.*)`
 
 type TodoScanner struct {
+	todos []Todo
 }
 
 func (scanner *TodoScanner) scanAllFiles(directoryPath string) error {
@@ -25,7 +27,6 @@ func (scanner *TodoScanner) scanAllFiles(directoryPath string) error {
 			scanner.scanAllFiles(archive.Name())
 		}
 		scanner.getAllTodosFromFile(archive.Name())
-		fmt.Println(archive.Name())
 	}
 
 	return nil
@@ -42,23 +43,30 @@ func (scanner *TodoScanner) getAllTodosFromFile(fileName string) error {
 	fileScanner.Split(bufio.ScanLines)
 
 	for fileScanner.Scan() {
-		line, err := getTodoFromLine(fileScanner.Text())
-		if err != nil {
-			return fmt.Errorf("Unable to read TODO from line")
+		todo := scanner.getTodoFromLine(fileScanner.Text())
+		if todo == nil {
+			continue
 		}
-		fmt.Println(line)
+		scanner.todos = append(scanner.todos, *todo)
 	}
 
 	return nil
 }
 
-func getTodoFromLine(line string) (*Todo, error) {
+func (scanner *TodoScanner) getTodoFromLine(line string) *Todo {
 	regex := regexp.MustCompile(REGEX_PATTERN_FOR_TODO)
 	matches := regex.FindSubmatch([]byte(line))
+	if len(matches) < 2 {
+		return nil
+	}
 	for _, match := range matches {
 		fmt.Println(string(match))
 	}
-	return nil, nil
+	todoTitle := strings.TrimSpace(string(matches[1]))
+	if len(todoTitle) == 0 {
+		return nil
+	}
+	return newTodo(todoTitle)
 }
 
 func main() {
