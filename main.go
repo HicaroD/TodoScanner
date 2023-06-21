@@ -29,6 +29,8 @@ func (scanner *TodoScanner) scanAllFiles(directoryPath string) error {
 		scanner.getAllTodosFromFile(archive.Name())
 	}
 
+	// TODO: upload selected TODOs to GitHub
+
 	return nil
 }
 
@@ -47,10 +49,22 @@ func (scanner *TodoScanner) getAllTodosFromFile(fileName string) error {
 		if todo == nil {
 			continue
 		}
-		scanner.todos = append(scanner.todos, *todo)
+		if scanner.userWantsToUploadTodo(todo) {
+			scanner.todos = append(scanner.todos, *todo)
+		}
 	}
 
 	return nil
+}
+
+func (scanner *TodoScanner) userWantsToUploadTodo(todo *Todo) bool {
+	var answer string
+	fmt.Printf("\nDo you want to upload the TODO below? [y/n]\n- %s\n", todo.title)
+	fmt.Scanln(&answer)
+
+	answer = strings.TrimSpace(answer)
+	answer = strings.ToLower(answer)
+	return answer == "y"
 }
 
 func (scanner *TodoScanner) getTodoFromLine(line string) *Todo {
@@ -58,9 +72,6 @@ func (scanner *TodoScanner) getTodoFromLine(line string) *Todo {
 	matches := regex.FindSubmatch([]byte(line))
 	if len(matches) < 2 {
 		return nil
-	}
-	for _, match := range matches {
-		fmt.Println(string(match))
 	}
 	todoTitle := strings.TrimSpace(string(matches[1]))
 	if len(todoTitle) == 0 {
