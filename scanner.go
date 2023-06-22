@@ -93,7 +93,6 @@ func (scanner *TodoScanner) uploadTodos() error {
 	return nil
 }
 
-// TODO: refactor
 func (scanner *TodoScanner) makeRequestInGitHubApi(todo Todo) error {
 	client := &http.Client{}
 
