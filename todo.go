@@ -1,7 +1,7 @@
 package main
 
 type Todo struct {
-	title string
+	Title string
 }
 
 func newTodo(title string) *Todo {

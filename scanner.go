@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -11,12 +13,12 @@ import (
 var REGEX_PATTERN_FOR_TODO string = `TODO:\s*(.*)`
 
 type TodoScanner struct {
-	repositoryLink string
-	todos          []Todo
+	Github *GitHub
+	Todos  []Todo
 }
 
-func newScanner(repositoryLink string) *TodoScanner {
-	return &TodoScanner{repositoryLink, make([]Todo, 0)}
+func newScanner(github *GitHub) *TodoScanner {
+	return &TodoScanner{github, make([]Todo, 0)}
 }
 
 func (scanner *TodoScanner) scanAllFiles(directoryPath string) error {
@@ -51,7 +53,7 @@ func (scanner *TodoScanner) getAllTodosFromFile(fileName string) error {
 			continue
 		}
 		if scanner.userWantsToUploadTodo(todo) {
-			scanner.todos = append(scanner.todos, *todo)
+			scanner.Todos = append(scanner.Todos, *todo)
 		}
 	}
 
@@ -60,7 +62,7 @@ func (scanner *TodoScanner) getAllTodosFromFile(fileName string) error {
 
 func (scanner *TodoScanner) userWantsToUploadTodo(todo *Todo) bool {
 	var answer string
-	fmt.Printf("\nDo you want to upload the TODO below? [y/n]\n- %s\n", todo.title)
+	fmt.Printf("\nDo you want to upload the TODO below? [y/n]\n- %s\n", todo.Title)
 	fmt.Scanln(&answer)
 
 	answer = strings.TrimSpace(answer)
@@ -81,6 +83,38 @@ func (scanner *TodoScanner) getTodoFromLine(line string) *Todo {
 	return newTodo(todoTitle)
 }
 
-func (scanner *TodoScanner) uploadTodos() {
+func (scanner *TodoScanner) uploadTodos() error {
+	for _, todo := range scanner.Todos {
+		err := scanner.makeRequestInGitHubApi(todo)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
+// TODO: refactor
+func (scanner *TodoScanner) makeRequestInGitHubApi(todo Todo) error {
+	client := &http.Client{}
+
+	rawPayload := []byte(fmt.Sprintf(`{"title": "%s"}`, todo.Title))
+	payload := bytes.NewReader(rawPayload)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/issues", scanner.Github.Repository)
+
+	request, err := http.NewRequest("POST", url, payload)
+	if err != nil {
+		return err
+	}
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", scanner.Github.GithubToken))
+
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 201 {
+		return fmt.Errorf("unable to create issue.\nreason: %s", response.Body)
+	}
+	fmt.Println("Issue uploaded")
+	return nil
 }

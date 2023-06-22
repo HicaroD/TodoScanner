@@ -22,3 +22,6 @@ go.work
 
 # My private TODO list
 todo.md
+
+# Sensitive personal information
+todo.json
