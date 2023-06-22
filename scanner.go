@@ -28,10 +28,10 @@ func (scanner *TodoScanner) scanAllFiles(directoryPath string) error {
 	}
 
 	for _, archive := range archives {
+		scanner.getAllTodosFromFile(archive.Name())
 		if archive.IsDir() {
 			scanner.scanAllFiles(archive.Name())
 		}
-		scanner.getAllTodosFromFile(archive.Name())
 	}
 	scanner.uploadTodos()
 	return nil
