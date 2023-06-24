@@ -96,15 +96,13 @@ func (scanner *TodoScanner) uploadTodos() error {
 func (scanner *TodoScanner) makeRequestInGitHubApi(todo Todo) error {
 	client := &http.Client{}
 
-	rawPayload := []byte(fmt.Sprintf(`{"title": "%s"}`, todo.Title))
-	payload := bytes.NewReader(rawPayload)
-	url := fmt.Sprintf("https://api.github.com/repos/%s/issues", scanner.Github.Repository)
+	payload := scanner.getRequestPayload(todo)
+	url := scanner.getGitHubUrl()
 
-	request, err := http.NewRequest("POST", url, payload)
+	request, err := scanner.getRequest(url, payload)
 	if err != nil {
 		return err
 	}
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", scanner.Github.GithubToken))
 
 	response, err := client.Do(request)
 	if err != nil {
@@ -116,4 +114,24 @@ func (scanner *TodoScanner) makeRequestInGitHubApi(todo Todo) error {
 	}
 	fmt.Println("Issue uploaded")
 	return nil
+}
+
+func (scanner *TodoScanner) getRequest(url string, payload *bytes.Reader) (*http.Request, error) {
+	request, err := http.NewRequest("POST", url, payload)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", scanner.Github.GithubToken))
+	return request, nil
+}
+
+func (scanner *TodoScanner) getGitHubUrl() string {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/issues", scanner.Github.Repository)
+	return url
+}
+
+func (*TodoScanner) getRequestPayload(todo Todo) *bytes.Reader {
+	rawPayload := []byte(fmt.Sprintf(`{"title": "%s"}`, todo.Title))
+	payload := bytes.NewReader(rawPayload)
+	return payload
 }
