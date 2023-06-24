@@ -6,8 +6,9 @@ import (
 )
 
 type GitHub struct {
-	Repository  string `json:"repo"`
-	GithubToken string `json:"token"`
+	Repository  string   `json:"repo"`
+	GithubToken string   `json:"token"`
+	Extensions  []string `json:"extensions"`
 }
 
 func newGitHub() (*GitHub, error) {

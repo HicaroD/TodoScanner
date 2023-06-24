@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -28,13 +29,29 @@ func (scanner *TodoScanner) scanAllFiles(directoryPath string) error {
 	}
 
 	for _, archive := range archives {
-		scanner.getAllTodosFromFile(archive.Name())
 		if archive.IsDir() {
 			scanner.scanAllFiles(archive.Name())
+		}
+		fileExtension := filepath.Ext(archive.Name())
+		if scanner.fileHasAllowedExtension(fileExtension) {
+			scanner.getAllTodosFromFile(archive.Name())
 		}
 	}
 	scanner.uploadTodos()
 	return nil
+}
+
+func (scanner *TodoScanner) fileHasAllowedExtension(fileExtension string) bool {
+	if len(scanner.Github.Extensions) == 0 {
+		return true
+	}
+
+	for _, allowedExtension := range scanner.Github.Extensions {
+		if fileExtension == allowedExtension {
+			return true
+		}
+	}
+	return false
 }
 
 func (scanner *TodoScanner) getAllTodosFromFile(fileName string) error {
