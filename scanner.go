@@ -55,14 +55,10 @@ func (scanner *TodoScanner) fileHasAllowedExtension(fileExtension string) bool {
 }
 
 func (scanner *TodoScanner) getAllTodosFromFile(fileName string) error {
-	file, err := os.Open(fileName)
+	fileScanner, err := scanner.getLineByLineFileScanner(fileName)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-
-	fileScanner := bufio.NewScanner(file)
-	fileScanner.Split(bufio.ScanLines)
 
 	for fileScanner.Scan() {
 		todo := scanner.getTodoFromLine(fileScanner.Text())
@@ -75,6 +71,18 @@ func (scanner *TodoScanner) getAllTodosFromFile(fileName string) error {
 	}
 
 	return nil
+}
+
+func (*TodoScanner) getLineByLineFileScanner(fileName string) (*bufio.Scanner, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	fileScanner := bufio.NewScanner(file)
+	fileScanner.Split(bufio.ScanLines)
+	return fileScanner, nil
 }
 
 func (scanner *TodoScanner) userWantsToUploadTodo(todo *Todo) bool {
